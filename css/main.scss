@@ -1,0 +1,289 @@
+@import 'reset' ;
+@import '1140' ;
+@import 'animate' ;
+
+$default-font : 'Raleway', Helvetica, Arial, sans-serif ;
+$teaser-font : 'Montserrat', Helvetica, Arial, sans-serif ;
+
+$default-font-color: #8a9296 ;
+$light-font-color: #1aae88 ;
+$light2-font-color: #c9d5db ;
+$dark-font-color: #474b4d ;
+
+@mixin transition( $args ){
+	-webkit-transition: unquote( $args ) ;
+	-moz-transition: unquote( $args ) ;
+	transition: unquote( $args ) ;
+}
+
+@mixin transition-color( $s ){
+	
+	-webkit-transition: color $s ease ;
+	-moz-transition: color $s ease ;
+	transition: color $s ease ;
+
+}
+
+@mixin border-radius( $r ){
+	
+	-webkit-border-radius: $r ;
+	-moz-border-radius: $r ;
+	border-radius: $r ;
+
+}
+
+
+body {
+
+	background: #FFF ;
+
+  font-family: $default-font ;
+  font-weight: 500;
+
+  line-height: 1.5 ;
+  font-size: 14px ;
+
+	color: $default-font-color ;
+
+	font-smoothing: antialiased;
+	-moz-font-smoothing: antialiased;
+	-webkit-font-smoothing: antialiased;
+
+}
+
+a { text-decoration: none; color: $default-font-color ; @include transition-color( .3s ) ; }
+a:hover { color: $light-font-color ; }
+
+small	{ font-size: 10px }
+em { font-style: italic }
+strong { font-weight: bold }
+hr { border: 0 ; height: 1px ; background: $light2-font-color }
+
+.center {
+	text-align: center;
+	margin: 0 auto ;
+}
+
+h1,h2,h3,h4,h5 {
+
+	font-family: $teaser-font ;
+	font-size: 16px ;
+	font-weight: bold ;
+	line-height: 1.6 ;
+	letter-spacing: 0.5px ;
+}
+
+h1,h2,h3 {
+	font-size: 30px ;
+	font-weight: normal ;
+	color: $dark-font-color ;
+	margin: 0 ;
+	padding: 16px 0 ;
+}
+
+h3 {
+	font-size:22px ;
+}
+
+h4 {
+	font-weight: bold ;
+	font-size: 13px ;
+
+	text-transform: uppercase;
+
+	color: $dark-font-color ;
+	padding: 0 0 5px 0 ;
+	letter-spacing: 0.5px ;
+}
+
+h5 {
+	font-size:11px ;
+	text-transform:uppercase ;
+	padding-top:0px ;
+	color: $light2-font-color;
+}
+
+p {
+	font-family: $default-font ;
+	font-size: 14px ;
+	line-height: 1.6;
+
+	&.strong {
+		font-weight: 700 ;
+	}
+
+	&.center {
+		text-align:center ;
+	}
+
+}
+
+.img {display:block;margin:0;padding:0;}
+.icon { display: inline-block; margin-right: 20px ; color: $light2-font-color }
+.highlight { color: $light-font-color }
+.light-font-color { color: $light-font-color ; }
+.transparent-color { color: transparent ; }
+.page-spacing { padding: 60px 0 }
+
+svg.hr {
+	display: block;
+	margin: 0 auto ;
+	
+	path {
+		fill: transparent ;
+		stroke: $light-font-color ;
+	}
+
+}
+
+header {
+
+	display: block;
+	width: 100% ;
+	position: absolute;
+	z-index: 999;
+	top: 0 ;
+
+	.masthead {
+		display: block;
+		margin: 15px auto ;
+		width: calc( 84px / 2 );
+		height: calc( 98px / 2 );
+
+	}
+
+}
+
+// a horizontal list style
+.features {
+
+	padding: 60px 0 80px 0;
+
+	.title-icon  {
+		display:block ;
+		font-size: 1.6em ;
+		margin-bottom: 12px ;
+	}
+
+	.title { padding-bottom: 9px ; }
+
+}
+
+// Introduction Part
+.page-data {
+
+	padding-top: 0 ;
+
+	p { font-size: 16px ; }
+
+	.totheback {
+		font-style: italic;
+		color: $light-font-color ;
+	}
+
+	.map {
+	  margin: 0 ; padding: 0 ;
+	  position: absolute;
+	  display: block;
+	  bottom: 0px;
+	  right: 0px ;
+	  width: 960px;
+	  height: 700px ;
+	}
+}
+
+.page-mappat {
+	
+	.teaser {
+		padding: 30px 0 ;
+
+	}
+
+}
+
+.incolor {
+
+	$light-background-color: #FFF ;
+	$line-background-font-color: rgb(145, 153, 170) ;
+
+	position: relative;
+	overflow: hidden;
+
+  min-height: 600px ;
+  background: $light-background-color ;
+
+	border-bottom: 1px solid $light2-font-color;
+
+  // Outline Map
+  svg  {
+
+  	.commune, .province {
+  		fill: transparent ;
+  		fill-opacity: 1;
+  		stroke: $light2-font-color ;
+  		stroke-width: 0.8 ;
+  		stroke-opacity: 0.4 ;
+  	}
+
+  	.province {
+  		fill: transparent ;
+  		stroke: $light2-font-color ;
+  		stroke-width: 1.2 ;
+  		stroke-opacity: 0.9 ;
+  	}
+
+  }
+
+}
+
+.page-remote-monitoring {
+
+	position: relative ;
+	overflow: hidden ;
+
+	.cover-img {
+
+		display:block ;
+		background: url(../img/ambergy@2x.png) no-repeat ;
+		background-size:  1556px*0.5 973px*0.5 ;
+
+		width: 1556px*0.5;
+		height: 973px*0.5;
+
+		position: absolute ;
+		bottom:0px ;
+		right: -20% ;
+
+	}
+
+	.page-title {
+		// min-height: 100px ;
+
+		h3 {margin: 0 ;padding: 30px 0 0 0 ;}
+		h5 {margin:0;padding: 0 0 30px 0 ;line-height:1.2}
+	}
+
+	.page-cover {
+		min-height: 380px ;
+		background: #25262d ;
+		// background: $dark-font-color ;
+
+	}
+
+	.content-wrapper {
+
+		padding: 70px 0 50px ;
+
+		p {
+			color: rgba(255,255,255,0.7) ;
+			text-shadow: 0 -1px 0 rgba(0,0,0,1) ;
+		}
+
+	}
+
+}
+
+@import 'devices' ;
+@import 'slides' ;
+@import 'tags' ;
+@import 'webpages' ;

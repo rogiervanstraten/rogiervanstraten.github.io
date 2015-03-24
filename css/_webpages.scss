@@ -1,0 +1,37 @@
+.webpages {
+	position: relative;
+	width: 100% ;
+	overflow: hidden;
+
+	min-height: 100px ;
+
+	ul.webpage-list {
+
+		position: relative;
+		height: 100% ;
+
+		@include transition("all .2s ease") ;
+
+		li {
+
+			float: left;
+			height: 100% ;
+
+			padding-left: 40px ;
+			padding-right: 40px ;
+			font-size: 60px ;
+
+			a {
+				font-weight: bold ;
+				color: $light2-font-color ;
+				@include transition-color( .3s ) ;
+
+				&:hover { color: $light-font-color }
+
+			}
+
+		}
+
+	}
+
+}

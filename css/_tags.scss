@@ -1,0 +1,60 @@
+$defaultbg-color: $light2-font-color ;
+$defaultbg-color-hover: #00B0FF ;
+$ondarkbg-color: rgba( 255,255,255,0.3 );
+$ondarkbg-color-hover: rgba( 255,255,255,0.8 );
+
+.tags {
+
+	display: block;
+	margin: 40px 0 20px 0 ;
+
+	color: $defaultbg-color ;
+
+	li {
+
+		display: inline-block;
+		cursor: default;
+
+		font-size: 10px ;
+		
+		padding: 2px 4px 1px ;
+		
+		margin-right: 4px ;
+		margin-bottom: 6px ;
+
+		border: 1px solid $defaultbg-color ;
+
+		text-transform: uppercase;
+
+		@include border-radius( 2px ) ;
+		@include transition( "border .2s ease, color .2s ease" ) ;
+
+		&:hover {
+		
+			color: $defaultbg-color-hover ;
+			border-color: $defaultbg-color-hover ;
+
+		}
+		
+	}
+
+	&.darkbg {
+
+		color: $ondarkbg-color ;
+
+		li {
+			border: 1px solid $ondarkbg-color  ;
+	
+			&:hover {
+			
+				color: $ondarkbg-color-hover ;
+				border-color: $ondarkbg-color-hover ;
+
+			}
+
+		}
+
+	}
+
+
+}
