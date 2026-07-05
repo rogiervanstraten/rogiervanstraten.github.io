@@ -8,6 +8,16 @@ const blog = defineCollection({
     description: z.string(),
     date: z.coerce.date(),
     draft: z.boolean().default(false),
+    links: z
+      .array(
+        z.object({
+          href: z.string(),
+          title: z.string(),
+          subtitle: z.string(),
+          kind: z.enum(['github', 'marketplace']),
+        })
+      )
+      .optional(),
   }),
 });
 
