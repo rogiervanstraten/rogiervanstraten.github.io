@@ -4,7 +4,11 @@ description: A GitHub Action that walks module dependencies and changed files to
 date: 2026-07-05
 ---
 
-Somewhere past the tenth Terraform project living in the same repo, `plan`/`apply` on everything for every push stops being a shortcut and starts being a liability. A change to `dev/api` has no business touching `prod/billing`'s state, and yet there they both were, replanning together on every push because nothing distinguished them. That's the moment a monorepo needs to start answering a different question: not "what changed," but "what did this change actually reach."
+Somewhere past the tenth Terraform project in the same repo, I noticed I was running `plan`/`apply` on everything, every push. A change to `dev/api` has no business touching `prod/billing`'s state, yet there they were, replanning together because nothing told CI otherwise.
+
+I'd reached for Terragrunt before for exactly this — DRY config, per-environment folders, dependency blocks that track what needs what. It solves reusability well. What soured me on it was the trade: it wraps Terraform in another HCL layer to generate the Terraform I meant to write, and every time the two drifted, I was debugging the wrapper, not the infrastructure.
+
+So the real question wasn't "what changed" — it was "what did this change actually reach." I wanted that answer without bolting another abstraction onto Terraform to get it.
 
 ## Diffing files isn't enough
 
