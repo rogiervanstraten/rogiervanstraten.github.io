@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+
+<Layout title="Rogier van Straten">
+  <section class="mb-16">
+    <h1 class="text-2xl font-semibold tracking-tight text-neutral-900">
+      rogier van straten
+    </h1>
+    <p class="mt-3 max-w-md text-neutral-600">
+      Full-stack developer from the Netherlands. Building things, writing
+      notes about it here.
+    </p>
+    <p class="mt-4 font-mono text-xs text-neutral-400">
+      running | astro + tailwind + markdown
+    </p>
+  </section>
+
+  <section>
+    <h2 class="mb-6 font-mono text-xs uppercase tracking-widest text-neutral-400">
+      writing
+    </h2>
+    <ul class="space-y-6">
+      {
+        posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.id}/`} class="group flex items-baseline justify-between gap-4">
+              <span class="text-neutral-900 underline decoration-neutral-300 underline-offset-4 group-hover:decoration-neutral-900">
+                {post.data.title}
+              </span>
+              <span class="shrink-0 font-mono text-xs text-neutral-400">
+                {post.data.date.toISOString().slice(0, 10)}
+              </span>
+            </a>
+            <p class="mt-1 text-sm text-neutral-500">{post.data.description}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Layout>

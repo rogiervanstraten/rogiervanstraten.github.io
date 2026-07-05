@@ -1,0 +1,6 @@
+minimumReleaseAge: 14400
+minimumReleaseAgeExclude:
+  - astro
+  - '@astrojs/*'
+  - tailwindcss
+  - '@tailwindcss/*'
