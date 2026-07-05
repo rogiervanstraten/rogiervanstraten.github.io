@@ -1,2 +1,39 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.prose :where(code):not(:where(pre code, pre code *)) {
+  font-family: var(--font-mono);
+  background: #eef3ff;
+  color: #2563eb;
+  border-radius: 0.3em;
+  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+  font-weight: 450;
+}
+
+.prose :where(code):not(:where(pre code, pre code *))::before,
+.prose :where(code):not(:where(pre code, pre code *))::after {
+  content: none;
+}
+
+.prose pre {
+  background-color: #f6f8fe !important;
+  border: 1px solid #e3e9f7;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.85em;
+  line-height: 1.7;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+}

@@ -1,21 +1,5 @@
----
-const nav = [
-  { href: '/', label: 'home' },
-  { href: '/blog', label: 'blog' },
-];
----
-
-<header class="flex items-center justify-between py-8">
+<header class="py-8">
   <a href="/" class="font-mono text-sm font-semibold tracking-tight text-neutral-900">
     rogier<span class="text-neutral-400">/</span>vanstraten
   </a>
-  <nav class="flex gap-5 font-mono text-sm text-neutral-500">
-    {
-      nav.map((item) => (
-        <a href={item.href} class="transition-colors hover:text-neutral-900">
-          {item.label}
-        </a>
-      ))
-    }
-  </nav>
 </header>
