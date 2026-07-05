@@ -4,21 +4,23 @@ description: A GitHub Action that uses the Deployments API as per-app deploy sta
 date: 2026-07-05
 ---
 
-The goal was a clear way to deploy apps in an NX monorepo without ceremony. The usual answer — "run affected and deploy what comes back" — breaks down the moment apps stop shipping in lockstep. This action fixes it with one idea: let GitHub's Deployments API hold the state, and ask it a separate question per app.
+Two apps, one monorepo. `web` had shipped an hour ago. `api` hadn't gone out in a month. A push to `main` touched both, and the deploy pipeline had one question to answer: what actually needs to redeploy.
 
-## One base SHA is wrong for somebody
+The obvious tool for that is `nx affected` — diff against a base SHA, deploy whatever comes back changed. The obvious base SHA is "the last deploy." Except there is no single "last deploy" here. Diff `api` against an hour-old commit and it looks unchanged, correctly. Diff `web` against a month-old commit and everything looks changed, whether it is or not. One base SHA is right for at most one app and wrong for the rest. "Just deploy everything on main" makes the problem disappear by making `affected` pointless.
 
-`nx affected` needs a base to diff against. In a single-app repo that's easy — diff against the last deploy. In a monorepo there's no single "last deploy." App A shipped this morning. App B hasn't gone out in a month. Diff both against the same SHA and you're wrong for at least one: either B looks unchanged after a month of commits, or A rebuilds for changes it already shipped. "Just deploy everything on main" papers over it, but then affected buys you nothing.
+What each app actually needed was its own base SHA — its own answer to "when did I last ship." That data wasn't missing, it just wasn't anywhere `nx affected` could query it.
 
-## A base SHA per app, stored as deployments
+## The deploy history already exists
 
-The per-app deploy history already exists — it just has to live somewhere queryable. [GitHub Deployments](https://docs.github.com/en/rest/deployments/deployments) is that place. Each app deploys into its own environment, `<environment>/<short-name>` — `staging/web`, `staging/api`, and so on.
+It's sitting in [GitHub Deployments](https://docs.github.com/en/rest/deployments/deployments), one record per deploy, already keyed by environment. Give each app its own environment — `<environment>/<short-name>`, so `staging/web`, `staging/api` — and the per-app history is just... there. No new state to invent, no manifest to keep in sync by hand.
 
-On a push, the action walks every app and asks GitHub for the most recent `SUCCESS` deployment in that app's environment. That commit becomes the base SHA for that app alone. Then `nx show projects --affected` runs against that base; affected apps go in the matrix, the rest are skipped. No external database, no manifest committed back to the repo — the deploy history is the state, and GitHub already keeps it.
+So the action does the obvious thing with it: on a push, walk every app, ask GitHub for the most recent `SUCCESS` deployment in that app's environment, and use that commit as the base for that app alone. Run `nx show projects --affected` against it. Affected apps go in the matrix, the rest get skipped. `web`'s diff starts an hour back; `api`'s starts a month back. Both correct, both cheap, no external database involved.
 
-## Filtering by ref, so feature branches don't poison main
+## Then a feature branch broke it
 
-A `workflow_dispatch` deploy from a feature branch also writes a deployment record. Left alone, a later push to `main` could pick that up as its "last successful" base and diff against a commit that never landed on main. So results are filtered by ref: a push only accepts deployments whose `ref` matches the current one.
+A `workflow_dispatch` deploy from a feature branch writes a deployment record too — same as any push. Left alone, that record sits in the same history a later push to `main` reads from. Push to `main`, and the action might pick up the feature-branch deploy as `api`'s "last successful," then diff against a commit that never actually landed on `main`. Wrong base, wrong affected list, and nothing about it looks wrong until the diff comes out strange.
+
+The fix is a filter most people wouldn't think to add until they'd been bitten by its absence: only accept deployments whose `ref` matches the ref currently being diffed.
 
 ```ts
 const node = result.repository.deployments.nodes.find(
@@ -28,23 +30,25 @@ const node = result.repository.deployments.nodes.find(
 )
 ```
 
-No prior deploy on the current ref — first time an app ships — falls back to the repo's initial commit, so the app is affected by definition. First deploy always runs.
+No prior deploy on that ref — an app's first time shipping — and there's nothing to filter down to, so it falls back to the repo's initial commit. First deploy is affected by definition, which is the only sane default.
 
-## Two flows, on purpose
+## Manual deploys don't need to ask permission
 
-Push is automatic: environment is inferred from the ref (`main` → `staging`, else → `production`), and affected decides what ships. `workflow_dispatch` is the escape hatch — pass an explicit environment and app list, affected is skipped, and the named apps deploy `HEAD`. A manual deploy has already made the decision; re-litigating it through affected would just get in the way.
+`workflow_dispatch` still exists as its own path, deliberately separate from all of the above. Someone triggering a manual deploy has already decided what ships and where — passing an explicit environment and app list. Running that decision back through `affected` would just be second-guessing a call that's already been made, so it's skipped entirely: the named apps go straight into the matrix and deploy `HEAD`. Push stays automatic and inferred (`main` → `staging`, else → `production`); dispatch stays a deliberate override.
 
-## The tradeoffs
+## What this costs
 
-- **Coupled to naming.** Environments must be `<environment>/<short-name>` and match each app's `project.json` name. Get it wrong and an app silently never resolves a base SHA — hidden as "always deploys" instead of an error.
-- **Trusts deployment records.** Create the Deployment before the deploy actually succeeds and the base SHA is a lie. The `SUCCESS` check helps; discipline about marking success does the rest.
-- **100-deployment window.** The query looks at the last 100 per environment. On a busy environment a stale-but-relevant deploy could fall off the end. Unlikely, but there.
+None of this is free, and it's worth being honest about where it can bite:
 
-The alternatives — a single base SHA, or a hand-maintained manifest — have worse failure modes. These are the honest cost of leaning on Deployments as the source of truth.
+- **Naming is load-bearing.** Environments have to be `<environment>/<short-name>`, matching each app's `project.json` name exactly. Typo it and the app doesn't error — it just never resolves a base SHA and quietly looks like it "always deploys."
+- **It trusts the record, not the deploy.** If a Deployment gets created before the deploy has actually succeeded, the base SHA is lying. The `SUCCESS` check catches the honest cases; the rest is discipline about when you mark success.
+- **History has a 100-deployment window.** On a very busy environment, a stale-but-still-relevant deploy could scroll off the end of that query. Unlikely, but not impossible.
+
+A single shared base SHA or a hand-maintained manifest both fail worse and fail more often. This is the cost of the version that actually works.
 
 ## Where it lands
 
-The output is a JSON matrix that feeds straight into a deploy job, plus a `has-apps` flag to skip an empty build:
+What comes out the other end is a JSON matrix a deploy job can consume directly, plus a `has-apps` flag so an empty result skips the build instead of running one for nothing:
 
 ```json
 [
@@ -53,4 +57,4 @@ The output is a JSON matrix that feeds straight into a deploy job, plus a `has-a
 ]
 ```
 
-The action doesn't deploy anything itself. It answers "what changed, per app, since each app last shipped," and hands that to whatever does.
+The action itself never deploys anything. It just answers, per app, "what changed since you last shipped" — and hands that answer to whatever does.
