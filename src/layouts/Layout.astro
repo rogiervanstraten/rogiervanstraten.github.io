@@ -22,13 +22,13 @@ const { title, description = 'Developer notes and projects.' } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body class="bg-[#fafafa] text-neutral-900 antialiased">
+  <body class="bg-[#fafafa] text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
     <div class="mx-auto flex min-h-screen max-w-2xl flex-col px-6">
       <Header />
       <main class="flex-1 py-12">
         <slot />
       </main>
-      <footer class="border-t border-neutral-200 py-8 font-mono text-xs text-neutral-400">
+      <footer class="border-t border-neutral-200 py-8 font-mono text-xs text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
         &copy; {new Date().getFullYear()} Rogier van Straten
       </footer>
     </div>

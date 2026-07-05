@@ -8,7 +8,10 @@ export default defineConfig({
   site: 'https://rogiervanstraten.github.io',
   markdown: {
     shikiConfig: {
-      theme: 'github-light'
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark'
+      }
     }
   },
   vite: {

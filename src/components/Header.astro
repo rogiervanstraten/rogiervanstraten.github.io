@@ -1,5 +1,34 @@
-<header class="py-8">
-  <a href="/" class="font-mono text-sm font-semibold tracking-tight text-neutral-900">
-    rogier<span class="text-neutral-400">/</span>vanstraten
+---
+import GithubMark from './icons/GithubMark.astro';
+import LinkedinMark from './icons/LinkedinMark.astro';
+---
+
+<header class="flex items-center justify-between py-8">
+  <a href="/" class="inline-flex items-center gap-2 font-mono text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+    <span class="relative flex h-1.5 w-1.5">
+      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-75"></span>
+      <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+    </span>
+    rogier<span class="text-neutral-400 dark:text-neutral-600">/</span>vanstraten
   </a>
+  <div class="flex items-center gap-4">
+    <a
+      href="https://github.com/rogiervanstraten"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub"
+      class="text-neutral-400 transition-colors hover:text-neutral-900 dark:text-neutral-600 dark:hover:text-neutral-100"
+    >
+      <GithubMark size={18} />
+    </a>
+    <a
+      href="https://linkedin.com/in/rogiervanstraten"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="LinkedIn"
+      class="text-neutral-400 transition-colors hover:text-neutral-900 dark:text-neutral-600 dark:hover:text-neutral-100"
+    >
+      <LinkedinMark size={18} />
+    </a>
+  </div>
 </header>

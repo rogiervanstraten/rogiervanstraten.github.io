@@ -37,3 +37,20 @@ body {
 .prose pre code {
   font-family: var(--font-mono);
 }
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(code):not(:where(pre code, pre code *)) {
+    background: #1e2942;
+    color: #93c5fd;
+  }
+
+  .prose pre {
+    background-color: #161b22 !important;
+    border-color: #30363d;
+  }
+
+  .prose pre,
+  .prose pre span {
+    color: var(--shiki-dark) !important;
+  }
+}

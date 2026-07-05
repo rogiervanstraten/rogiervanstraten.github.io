@@ -22,23 +22,23 @@ const headerLabels = { github: 'source', marketplace: 'marketplace' };
 
 <Layout title={`${post.data.title} — Rogier van Straten`} description={post.data.description}>
   <article>
-    <a href="/" class="font-mono text-xs text-neutral-400 hover:text-neutral-900">&larr; home</a>
-    <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
+    <a href="/" class="font-mono text-xs text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100">&larr; home</a>
+    <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
       {post.data.title}
     </h1>
-    <p class="mt-2 flex items-center gap-2 font-mono text-xs text-neutral-400">
+    <p class="mt-2 flex items-center gap-2 font-mono text-xs text-neutral-400 dark:text-neutral-500">
       <span>{post.data.date.toISOString().slice(0, 10)}</span>
       {
         post.data.links?.map((link) => {
           const Icon = headerIcons[link.kind];
           return (
             <>
-              <span class="text-neutral-300">&middot;</span>
+              <span class="text-neutral-300 dark:text-neutral-700">&middot;</span>
               <a
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 transition-colors hover:text-neutral-900"
+                class="inline-flex items-center gap-1 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
               >
                 <Icon size={12} />
                 <span>{headerLabels[link.kind]}</span>
@@ -48,7 +48,7 @@ const headerLabels = { github: 'source', marketplace: 'marketplace' };
         })
       }
     </p>
-    <div class="prose prose-neutral mt-8 max-w-none prose-headings:font-semibold prose-a:text-neutral-900">
+    <div class="prose prose-neutral dark:prose-invert mt-8 max-w-none prose-headings:font-semibold prose-a:text-neutral-900 dark:prose-a:text-neutral-100">
       <Content />
       {post.data.links && <QuickLinks links={post.data.links} />}
     </div>

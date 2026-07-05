@@ -27,19 +27,19 @@ const icons = { github: GithubMark, marketplace: Package };
           href={link.href}
           target="_blank"
           rel="noopener noreferrer"
-          class="group flex flex-1 items-center gap-3 rounded-lg border border-neutral-200 px-4 py-3 transition-colors hover:border-neutral-300 hover:bg-neutral-50"
+          class="group flex flex-1 items-center gap-3 rounded-lg border border-neutral-200 px-4 py-3 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:border-neutral-700 dark:hover:bg-neutral-900"
         >
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-600">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
             <Icon size={16} stroke-width={1.8} />
           </span>
           <span class="min-w-0 flex-1">
-            <span class="block text-sm font-medium text-neutral-900">{link.title}</span>
-            <span class="block text-xs text-neutral-400">{link.subtitle}</span>
+            <span class="block text-sm font-medium text-neutral-900 dark:text-neutral-100">{link.title}</span>
+            <span class="block text-xs text-neutral-400 dark:text-neutral-500">{link.subtitle}</span>
           </span>
           <ArrowUpRight
             size={14}
             stroke-width={2}
-            class="shrink-0 text-neutral-300 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-neutral-400"
+            class="shrink-0 text-neutral-300 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-neutral-400 dark:text-neutral-700 dark:group-hover:text-neutral-500"
           />
         </a>
       );
