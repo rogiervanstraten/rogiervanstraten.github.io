@@ -21,7 +21,7 @@ What each app actually needed was its own base SHA — its own answer to "when d
 
 ## The deploy history already exists
 
-It's sitting in [GitHub Deployments](https://docs.github.com/en/rest/deployments/deployments), one record per deploy, already keyed by environment. So I gave each app its own environment — `<environment>/<short-name>`, so `staging/web`, `staging/api` — and the per-app history was just... there. No new state to invent, no manifest to keep in sync by hand.
+It's sitting in [GitHub Deployments](https://docs.github.com/en/rest/deployments/deployments), one record per deploy, already keyed by environment. So I gave each app its own environment — `<environment>/<short-name>`, so `staging/web`, `staging/api` — and the per-app history was already there. No new state to invent, no manifest to keep in sync by hand.
 
 From there the action does the obvious thing: on a push, walk every app, ask GitHub for the most recent `SUCCESS` deployment in that app's environment, and use that commit as the base for that app alone. Run `nx show projects --affected` against it. Affected apps go in the matrix, the rest get skipped. `web`'s diff starts an hour back; `api`'s starts a month back. Both correct, both cheap, no external database involved.
 
@@ -39,15 +39,13 @@ const node = result.repository.deployments.nodes.find(
 );
 ```
 
-No prior deploy on that ref — an app's first time shipping — and there's nothing to filter down to, so it falls back to the repo's initial commit. First deploy is affected by definition, which is the only sane default.
+No prior deploy on that ref — an app's first time shipping — and there's nothing to filter down to, so it falls back to the repo's initial commit. First deploy is affected by definition, which is the only sensible default.
 
 ## Manual deploys don't need to ask permission
 
 So I kept `workflow_dispatch` as its own path, deliberately separate from all of the above. Someone triggering a manual deploy has already decided what ships and where — passing an explicit environment and app list. Running that decision back through `affected` would just be second-guessing a call that's already been made, so I skip it entirely: the named apps go straight into the matrix and deploy `HEAD`. Push stays automatic and inferred (`main` → `staging`, else → `production`); dispatch stays a deliberate override.
 
 ## What this costs
-
-None of this is free, and I'd rather be upfront about where it can bite:
 
 - **Naming is load-bearing.** Environments have to be `<environment>/<short-name>`, matching each app's `project.json` name exactly. Typo it and the app doesn't error — it just never resolves a base SHA and quietly looks like it "always deploys."
 - **It trusts the record, not the deploy.** If a Deployment gets created before the deploy has actually succeeded, the base SHA is lying. The `SUCCESS` check catches the honest cases; the rest is discipline about when you mark success.
