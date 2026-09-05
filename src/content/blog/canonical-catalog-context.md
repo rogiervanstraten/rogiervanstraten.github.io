@@ -58,31 +58,26 @@ The domain→area constraint is expressed in both formats as well. In Terraform,
 
 ## What the module outputs
 
-The root module validates, then passes the values through as outputs, including two composed objects that map directly onto Datadog's catalog YAML structure:
+The root module validates, then passes the values through as outputs representing the properties we consider part of the canonical catalog:
 
 ```hcl
-output "spec" {
+output "catalog_properties" {
   value = {
-    lifecycle = module.lifecycle.lifecycle_stage
-    tier      = module.tier.tier
-    type      = module.service_type.service_type
-  }
-}
-
-output "extensions" {
-  value = {
-    domain = module.domain.domain
-    area   = module.domain.area
-    team   = module.team.team
+    lifecycle_stage = module.lifecycle.lifecycle_stage
+    tier            = module.tier.tier
+    service_type    = module.service_type.service_type
+    domain          = module.domain.domain
+    area            = module.domain.area
+    team            = module.team.team
   }
 }
 ```
 
-So after calling the module, you get back validated values you can feed directly into your catalog YAML resource. The plan either passes with the right values or fails with a useful error message. You don't find out the domain was wrong when someone looks at the catalog six months later.
+So after calling the module, you get back validated values you can feed directly into whatever catalog resource your stack uses. The plan either passes with the right values or fails with a useful error message. You don't find out the domain was wrong when someone looks at the catalog six months later.
 
 ## What it doesn't do
 
-`catalog-context` is intentionally Datadog-agnostic. It knows nothing about how Datadog splits catalog fields between `spec` and `extensions`, nothing about entity kinds, nothing about which fields are required by which catalog version. That composition, mapping our canonical field names onto Datadog's schema, is the consuming repo's problem.
+`catalog-context` only knows about your canonical field definitions. It doesn't know how any particular catalog system structures its schema, what fields are required, or how to map these values into it. That composition is the consuming repo's problem.
 
 It's also not enforced retroactively. Existing catalog entries with bad data don't get rejected when you adopt this module; adoption is per-service as teams update their Terraform. The value builds over time as new services are catalogued correctly and existing ones get cleaned up.
 
