@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stacked Terraform Plans</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050505;
+      color: #999;
+      font-family: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .terminal {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #050505;
+    }
+
+    .header {
+      height: 30px;
+      flex: 0 0 30px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      border-bottom: 1px solid #151515;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .header-prefix {
+      color: #777;
+      margin-right: 6px;
+    }
+
+    .header-dim {
+      color: #666;
+    }
+
+    .header-name {
+      color: #d0d0d0;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 210px;
+      flex: 0 0 210px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #171717;
+      overflow: hidden;
+    }
+
+    .sidebar-title {
+      height: 27px;
+      flex: 0 0 27px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: #aaa;
+      border-bottom: 1px solid #111;
+      white-space: nowrap;
+    }
+
+    #sidebar {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-color: #292929 #050505;
+      scrollbar-width: thin;
+    }
+
+    #sidebar::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    #sidebar::-webkit-scrollbar-thumb {
+      background: #292929;
+    }
+
+    #sidebar::-webkit-scrollbar-track {
+      background: #050505;
+    }
+
+    .sidebar-title strong {
+      color: #ddd;
+    }
+
+    .resource {
+      height: 27px;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .resource:hover {
+      background: #0d0d0d;
+    }
+
+    .resource.selected {
+      background: #102d46;
+      color: #ddd;
+    }
+
+    .resource-symbol {
+      width: 16px;
+      flex: 0 0 16px;
+      color: #777;
+    }
+
+    .resource.warn .resource-symbol {
+      color: #d7d247;
+    }
+
+    .resource-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .resource-count {
+      margin-left: auto;
+      padding-left: 8px;
+      padding-right: 7px;
+      color: #777;
+    }
+
+    .resource.warn .resource-count {
+      color: #d7d247;
+    }
+
+    .right {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right-header {
+      height: 30px;
+      flex: 0 0 30px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: #aaa;
+      border-bottom: 1px solid #111;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .right-header .hash {
+      color: #777;
+      margin-right: 5px;
+    }
+
+    .right-header .rdim {
+      color: #6a6a6a;
+    }
+
+    .right-header .rname {
+      color: #d0d0d0;
+      font-weight: 600;
+    }
+
+    .right-header .rbadge {
+      margin-left: auto;
+      padding-left: 12px;
+      color: #777;
+    }
+
+    .right-header .rbadge.warn {
+      color: #d7d247;
+    }
+
+    .code-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      scrollbar-color: #292929 #050505;
+      scrollbar-width: thin;
+    }
+
+    .code-scroll::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .code-scroll::-webkit-scrollbar-thumb {
+      background: #292929;
+    }
+
+    .code-scroll::-webkit-scrollbar-track {
+      background: #050505;
+    }
+
+    .code {
+      min-width: max-content;
+      padding: 4px 0 40px 0;
+    }
+
+    .line {
+      display: flex;
+      align-items: stretch;
+      min-width: 100%;
+      line-height: 18px;
+      min-height: 18px;
+      border-left: 2px solid transparent;
+    }
+
+    .count {
+      width: 52px;
+      flex: 0 0 52px;
+      text-align: right;
+      padding-right: 8px;
+      color: #5a5a5a;
+      user-select: none;
+    }
+
+    .flag {
+      width: 14px;
+      flex: 0 0 14px;
+      text-align: center;
+      color: transparent;
+      user-select: none;
+    }
+
+    .sign {
+      width: 14px;
+      flex: 0 0 14px;
+      text-align: center;
+      user-select: none;
+    }
+
+    .code-text {
+      flex: 1;
+      white-space: pre;
+      padding-right: 28px;
+    }
+
+    .line.del {
+      --c: #a24d4b;
+    }
+
+    .line.add {
+      --c: #4f7a53;
+    }
+
+    .line.chg {
+      --c: #8f8235;
+    }
+
+    .line.ctx {
+      --c: #7a7a7a;
+    }
+
+    .group.outlier .line.del {
+      --c: #ff5c58;
+    }
+
+    .group.outlier .line.add {
+      --c: #57d16a;
+    }
+
+    .group.outlier .line.chg {
+      --c: #f0cf34;
+    }
+
+    .line.del.outlier {
+      --c: #ff5c58;
+    }
+
+    .line.add.outlier {
+      --c: #57d16a;
+    }
+
+    .line.chg.outlier {
+      --c: #f0cf34;
+    }
+
+    .line .sign {
+      color: var(--c);
+    }
+
+    .line .code-text {
+      color: var(--c);
+    }
+
+    .line.ctx .sign {
+      color: #4a4a4a;
+    }
+
+    .line.ctx .code-text {
+      color: #8a8a8a;
+    }
+
+    .line.del.outlier {
+      background: rgba(255, 92, 88, 0.09);
+      border-left-color: #ff5c58;
+    }
+
+    .line.add.outlier {
+      background: rgba(87, 209, 106, 0.09);
+      border-left-color: #57d16a;
+    }
+
+    .line.chg.outlier {
+      background: rgba(240, 207, 52, 0.09);
+      border-left-color: #f0cf34;
+    }
+
+    .line.outlier .count {
+      color: #c8c8c8;
+    }
+
+    .line.outlier .flag {
+      color: #d8d34a;
+    }
+
+    .group+.group {
+      padding-top: 6px;
+    }
+
+    .group-rule {
+      display: flex;
+      align-items: center;
+      height: 22px;
+      padding-left: 52px;
+      color: #4e4e4e;
+      border-top: 1px solid #131313;
+    }
+
+    .footer {
+      height: 25px;
+      flex: 0 0 25px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      border-top: 1px solid #161616;
+      color: #686868;
+      white-space: nowrap;
+    }
+
+    .footer-left {
+      flex: 1;
+    }
+
+    @media (max-width: 600px) {
+      .main {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex: 0 1 auto;
+        max-height: 135px;
+        border-right: none;
+        border-bottom: 1px solid #171717;
+      }
+
+      .count {
+        width: 44px;
+        flex: 0 0 44px;
+      }
+
+      .group-rule {
+        padding-left: 16px;
+      }
+
+      .footer-right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 420px) {
+
+      .header-dim,
+      .right-header .rdim {
+        display: none;
+      }
+
+      .right-header .rbadge {
+        padding-left: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="terminal">
+    <header class="header">
+      <span class="header-prefix">#</span>
+      <span class="header-dim" id="hdr-dim">module.service_baseline.</span><span class="header-name"
+        id="hdr-name">aws_db_instance.primary</span>
+    </header>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="sidebar-title"><strong>Resources</strong>&nbsp; · &nbsp;94 plans</div>
+        <div id="sidebar"></div>
+      </aside>
+
+      <section class="right">
+        <div class="right-header">
+          <span class="hash">#</span>
+          <span class="rdim" id="rh-dim"></span><span class="rname" id="rh-name"></span>
+          <span class="rbadge" id="rh-badge"></span>
+        </div>
+        <div class="code-scroll" id="scroll">
+          <div class="code" id="code"></div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-left">94 plans · 94 with changes · 2 outlier groups</div>
+      <div class="footer-right">↑↓ resource · ←→ scroll · e expand · q quit</div>
+    </footer>
+  </div>
+
+  <script>
+    const TOTAL = 94;
+
+    // module.service_baseline v4.2.0 -> v4.3.0, planned across 94 directories.
+    const groups = [
+      {
+        key: "db_primary",
+        module: "",
+        label: "aws_db_instance.primary",
+        plans: 1,
+        lines: [
+          [0, "-", 'resource "aws_db_instance" "primary" {', 1],
+          [1, "-", 'allocated_storage       = 100 -> null', 1],
+          [1, "-", 'backup_retention_period = 7 -> null', 1],
+          [1, "-", 'engine                  = "postgres" -> null', 1],
+          [1, "-", 'engine_version          = "14.7" -> null', 1],
+          [1, "-", 'identifier              = "checkout-primary" -> null', 1],
+          [1, "-", 'instance_class          = "db.r6g.xlarge" -> null', 1],
+          [1, "-", 'storage_encrypted       = true -> null', 1],
+          [0, "-", '}', 1],
+        ],
+      },
+      {
+        key: "legacy_s3",
+        module: "module.service_baseline.",
+        label: "aws_iam_role_policy.legacy_s3",
+        plans: 3,
+        lines: [
+          [0, "+", 'resource "aws_iam_role_policy" "legacy_s3" {', 3],
+          [1, "+", 'name = "legacy-s3-access"', 3],
+          [1, "+", 'role = aws_iam_role.app.id', 3],
+          [1, "+", 'policy = jsonencode({', 3],
+          [2, "+", 'Statement = [{', 3],
+          [3, "+", 'Action   = "s3:*"', 2],
+          [3, "+", 'Action   = ["s3:GetObject", "s3:PutObject"]', 1],
+          [3, "+", 'Effect   = "Allow"', 3],
+          [3, "+", 'Resource = "*"', 2],
+          [3, "+", 'Resource = "arn:aws:s3:::acme-refunds-logs/*"', 1],
+          [2, "+", '}]', 3],
+          [1, "+", '})', 3],
+          [0, "+", '}', 3],
+        ],
+      },
+      {
+        key: "logs_bucket",
+        module: "module.service_baseline.",
+        label: "aws_s3_bucket.logs",
+        plans: 91,
+        lines: [
+          [0, "~", 'resource "aws_s3_bucket" "logs" {', 91],
+          [1, "~", 'tags = {', 91],
+          [2, "+", '"ManagedBy"  = "platform-modules"', 91],
+          [2, "+", '"CostCenter" = "platform"', 88],
+          [2, "+", '"CostCenter" = "payments"', 3],
+          [1, " ", '}', 91],
+          [1, "~", 'lifecycle_rule {', 91],
+          [2, "~", 'enabled = false -> true', 91],
+          [2, "~", 'expiration {', 91],
+          [3, "~", 'days = 30 -> 90', 74],
+          [3, "~", 'days = 30 -> 365', 17],
+          [2, " ", '}', 91],
+          [1, " ", '}', 91],
+          [0, " ", '}', 91],
+        ],
+      },
+      {
+        key: "log_group",
+        module: "module.service_baseline.",
+        label: "aws_cloudwatch_log_group.app",
+        plans: 94,
+        lines: [
+          [0, "~", 'resource "aws_cloudwatch_log_group" "app" {', 94],
+          [1, "~", 'retention_in_days = 7 -> 30', 94],
+          [1, "~", 'tags = {', 94],
+          [2, "+", '"ManagedBy" = "platform-modules"', 94],
+          [1, " ", '}', 94],
+          [0, " ", '}', 94],
+        ],
+      },
+    ];
+
+    const signClass = { "-": "del", "+": "add", "~": "chg", " ": "ctx" };
+
+    // Same two rules the post publishes.
+    const isGroupOutlier = (plans) => plans * 2 < TOTAL;
+    const isLineOutlier = (lineCount, count, sign) =>
+      sign !== " " && count > 1 && (lineCount * 2 < count || (lineCount === 1 && count >= 4));
+
+    function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function renderLine(l, count) {
+      const [indent, sign, text, lineCount] = l;
+      const outlier = isLineOutlier(lineCount, count, sign);
+      const code = "  ".repeat(indent) + text;
+      return `<div class="line ${signClass[sign]}${outlier ? " outlier" : ""}">`
+        + `<span class="count">[${lineCount}]</span>`
+        + `<span class="flag">${outlier ? "⚠" : ""}</span>`
+        + `<span class="sign">${sign}</span>`
+        + `<span class="code-text">${esc(code)}</span>`
+        + `</div>`;
+    }
+
+    document.getElementById("code").innerHTML = groups.map((g) => {
+      const rows = g.lines.map((l) => renderLine(l, g.plans)).join("");
+      const rule = `<div class="group-rule">${esc(g.module + g.label)} &nbsp;·&nbsp; ${g.plans}/${TOTAL} plans</div>`;
+      return `<div id="grp-${g.key}" class="group${isGroupOutlier(g.plans) ? " outlier" : ""}">${rule}${rows}</div>`;
+    }).join("");
+
+    const sidebar = document.getElementById("sidebar");
+    sidebar.innerHTML = groups.map((g, i) => {
+      const warn = isGroupOutlier(g.plans);
+      return `<div class="resource ${warn ? "warn" : ""} ${i === 0 ? "selected" : ""}" data-key="${g.key}">`
+        + `<span class="resource-symbol">${warn ? "⚠" : g.lines[0][1]}</span>`
+        + `<span class="resource-name">${esc(g.label)}</span>`
+        + `<span class="resource-count">${g.plans}/${TOTAL}</span>`
+        + `</div>`;
+    }).join("");
+
+    function select(key) {
+      document.querySelectorAll(".resource").forEach((r) => {
+        r.classList.toggle("selected", r.dataset.key === key);
+      });
+      const g = groups.find((x) => x.key === key);
+      const warn = isGroupOutlier(g.plans);
+      document.getElementById("hdr-dim").textContent = g.module;
+      document.getElementById("hdr-name").textContent = g.label;
+      document.getElementById("rh-dim").textContent = g.module;
+      document.getElementById("rh-name").textContent = g.label;
+      const badge = document.getElementById("rh-badge");
+      badge.textContent = `${g.plans}/${TOTAL} plans`;
+      badge.classList.toggle("warn", warn);
+      document.getElementById("grp-" + key).scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    sidebar.querySelectorAll(".resource").forEach((r) => {
+      r.addEventListener("click", () => select(r.dataset.key));
+    });
+
+    let idx = 0;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { idx = Math.min(groups.length - 1, idx + 1); select(groups[idx].key); e.preventDefault(); }
+      if (e.key === "ArrowUp") { idx = Math.max(0, idx - 1); select(groups[idx].key); e.preventDefault(); }
+    });
+
+    select(groups[0].key);
+    document.getElementById("scroll").scrollTop = 0;
+  </script>
+</body>
+
+</html>

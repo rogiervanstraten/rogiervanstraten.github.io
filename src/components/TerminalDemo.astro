@@ -1,0 +1,149 @@
+---
+interface Props {
+  src: string;
+  title?: string;
+  height?: number;
+}
+const { src, title = 'gh-facade', height = 420 } = Astro.props;
+---
+
+<div class="demo-root not-prose my-8">
+  <div class="demo-backdrop"></div>
+  <div class="demo-frame flex flex-col overflow-hidden rounded-lg border border-neutral-800 bg-[#050505]">
+    <div class="flex h-8 shrink-0 items-center gap-2 border-b border-neutral-800 bg-[#111111] px-3">
+      <div class="flex gap-1.5">
+        <span class="h-3 w-3 rounded-full bg-[#FF5F57]"></span>
+        <span class="h-3 w-3 rounded-full bg-[#FFBD2E]"></span>
+        <span class="h-3 w-3 rounded-full bg-[#28C840]"></span>
+      </div>
+      <span class="flex-1 truncate text-center font-mono text-xs text-neutral-500">{title}</span>
+      <button
+        type="button"
+        class="demo-toggle flex items-center text-neutral-600 transition-colors hover:text-neutral-300"
+        aria-label="Expand demo"
+      >
+        <svg class="i-expand" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 5V1h4M9 1h4v4M13 9v4h-4M5 13H1V9" />
+        </svg>
+        <svg class="i-close hidden" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 2l10 10M12 2L2 12" />
+        </svg>
+      </button>
+    </div>
+    <iframe class="demo-iframe w-full border-0" src={src} height={height} title={title} loading="lazy"></iframe>
+  </div>
+</div>
+
+<style>
+  .demo-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s ease, visibility 0.18s ease;
+  }
+
+  .demo-root.is-open .demo-backdrop {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .demo-root.is-open .demo-frame {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 60;
+    width: min(1400px, calc(100vw - 4rem));
+    height: min(860px, calc(100vh - 4rem));
+    transform: translate(-50%, -50%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    animation: demo-in 0.18s ease-out;
+  }
+
+  .demo-root.is-open .demo-iframe {
+    flex: 1;
+    height: auto;
+  }
+
+  @keyframes demo-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.98);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .demo-root.is-open .demo-frame {
+      width: calc(100vw - 1rem);
+      height: calc(100dvh - 1rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo-backdrop,
+    .demo-root.is-open .demo-frame {
+      transition: none;
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  let openRoot: HTMLElement | null = null;
+
+  function close() {
+    if (!openRoot) return;
+    const toggle = openRoot.querySelector<HTMLButtonElement>('.demo-toggle');
+    openRoot.classList.remove('is-open');
+    openRoot.style.height = '';
+    toggle?.querySelector('.i-expand')?.classList.remove('hidden');
+    toggle?.querySelector('.i-close')?.classList.add('hidden');
+    toggle?.setAttribute('aria-label', 'Expand demo');
+    document.body.style.overflow = '';
+    openRoot = null;
+  }
+
+  function open(root: HTMLElement) {
+    if (openRoot) close();
+    const frame = root.querySelector<HTMLElement>('.demo-frame');
+    const toggle = root.querySelector<HTMLButtonElement>('.demo-toggle');
+    if (frame) root.style.height = `${frame.offsetHeight}px`;
+    root.classList.add('is-open');
+    toggle?.querySelector('.i-expand')?.classList.add('hidden');
+    toggle?.querySelector('.i-close')?.classList.remove('hidden');
+    toggle?.setAttribute('aria-label', 'Close demo');
+    document.body.style.overflow = 'hidden';
+    openRoot = root;
+    toggle?.focus();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && openRoot) close();
+  });
+
+  document.querySelectorAll<HTMLElement>('.demo-root').forEach((root) => {
+    root.querySelector('.demo-toggle')?.addEventListener('click', () => {
+      openRoot === root ? close() : open(root);
+    });
+
+    root.querySelector('.demo-backdrop')?.addEventListener('click', close);
+
+    // Escape typed while focus sits inside the iframe never reaches this
+    // document, so mirror the handler onto the (same-origin) demo document.
+    const iframe = root.querySelector<HTMLIFrameElement>('.demo-iframe');
+    iframe?.addEventListener('load', () => {
+      try {
+        iframe.contentDocument?.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Escape' && openRoot) close();
+        });
+      } catch {
+        // cross-origin demo, nothing to attach
+      }
+    });
+  });
+</script>

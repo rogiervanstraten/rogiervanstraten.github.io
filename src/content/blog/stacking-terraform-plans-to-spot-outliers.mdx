@@ -1,0 +1,71 @@
+---
+title: Stacking a hundred Terraform plans to find the one that's wrong
+description: A shared module bump plans every consumer at once, and the only question worth answering is which plans disagree with the rest, so I stacked them into one view instead of reading them in sequence.
+date: 2026-09-06
+draft: false
+---
+
+import TerminalDemo from '../../components/TerminalDemo.astro';
+
+A version bump on a shared module, `v4.2.0` to `v4.3.0`. Ninety-four directories consume it, so CI opened ninety-four plan jobs. That's correct, and it's the entire point of [terraform-affected-projects](/blog/terraform-affected-projects/): a change to a shared module shouldn't get quietly skipped anywhere it's used.
+
+Then someone has to approve the rollout.
+
+Ninety-one of those plans were the same two-line diff with a different directory name at the top. Three weren't. One of them carried an extra `destroy`, from a resource that had drifted months earlier and went unnoticed until the bump forced a refresh. Finding it meant reading all ninety-four. That's the job every time we bump anything.
+
+## Ninety-one of them say the same thing
+
+GitHub renders a run like that as a step summary ninety-four entries long, each one a wall of `~ resource "aws_..."` blocks. Scrolling it top to bottom doesn't work, and not because it's long. It's that nearly all of it is duplicate.
+
+The interesting plan (the directory missing an `import`, the one with the extra `destroy`) looks exactly like the boring ones at a glance. Same resource types, same attribute names, same shape. You're reading one plan at a time while holding the other ninety-three in your head, and somewhere around plan forty you stop holding anything. Everything just looks like more Terraform output.
+
+That's the real cost of a rollout at this size. Not the planning. Not the applying. The reviewing.
+
+## grep only finds what you already suspect
+
+The reflex is grep. Pull the logs, count `will be destroyed` across all ninety-four, see which directory comes back with a number nobody expected. It's cheap, it takes a minute, and most of the time it works.
+
+It works when the thing you're looking for already has a name. `destroy` is a hypothesis: suspect a destroy, search for a destroy, find it. The rollouts that bite are the ones with no hypothesis. Something in the batch is different and there's no string to search for, because a nameable failure would already be a check in CI. An outlier is defined by not matching the others, not by matching a pattern.
+
+The other habit is worse. Read five plans, decide the remaining eighty-nine look like those five, approve. That isn't a review, it's a bet, and it's a bet placed on every rollout.
+
+## Stacking the plans instead of reading them
+
+So I built a small thing that goes after the same logs a grep would. It shells out to `gh` for the run's jobs and pulls each job's log directly, rather than parsing the rendered summary. Different question, though: not "does any plan contain this string," but "does any plan disagree with the others."
+
+Instead of showing one plan and then the next, it lays all of them on top of each other and renders the composite. Every line carries a count of how many plans contain it.
+
+<TerminalDemo src="/demos/stacking-terraform-plans.html" title="terraform plans · 94 stacked" height={420} />
+
+## The same resource in ninety directories
+
+Stacking only works if `aws_s3_bucket.logs` in `payments/checkout` and `aws_s3_bucket.logs` in `payments/refunds` count as the same resource, even though their addresses differ. So each parsed resource gets a normalized key (type and name, directory stripped), and every plan in the run gets grouped by it. A resource appearing in 91 of 94 directories becomes one group with a `91/94` badge, not ninety-one things to read.
+
+Inside a group the same idea runs one level down, per line. Lines present in every plan render grey: consensus, nothing to look at. A line that shows up in only a minority of that group's plans gets flagged. That's the directory doing something the other ninety didn't.
+
+```go
+groupOutlier := count*2 < total
+lineOutlier := (count > 1) && (lineCount*2 < count || (lineCount == 1 && count >= 4))
+```
+
+A group is an outlier if fewer than half the changed directories have it at all. A line is an outlier if it's a minority inside its own group, or if exactly one directory has it out of four or more. That second clause earns its keep: three plans agreeing and one disagreeing is already worth a look, no need to wait for a landslide.
+
+## Sorting so the outlier finds you
+
+Flagging only helps if the flagged thing lands where I'm already looking. So outlier groups sort to the top, and the biggest groups fall in behind them. The changes that touched the most directories, usually "the bump did what I expected," get pushed to the bottom where they're easy to skim past.
+
+That's the whole trick: the expected changes are boring on purpose, so boring is what I scan past.
+
+## What a rollout looks like now
+
+Open the stack and the top of the screen is one of two things. Empty, meaning every group sits at full consensus and the bump did exactly one thing everywhere. Or it's the three or four groups that broke the pattern. Read those, decide, approve.
+
+It is faster, but speed isn't really what changed. Approving a rollout stopped being a bet on a sample. The comparison actually happened, across all ninety-four, and I can say which directories are odd rather than hoping the five I read were representative.
+
+## What it doesn't do
+
+It never touches Terraform state and never runs `plan` or `apply` itself. It's read-only against job logs that already exist. It needs `gh` authenticated against the org, and it's only as good as the plan text it can parse; a provider that formats its diffs unusually needs its own parsing rules.
+
+The bigger blind spot is the grep problem moved up a level. Ninety-four directories doing the same wrong thing look like perfect consensus: `94/94`, grey, sorted to the bottom where I'll never read them. It's good at "one of these is not like the others" and blind to "all of these are wrong together."
+
+And it answers "which directory is different," not "is different wrong." That judgment still needs a human looking at the flagged group. Just at one group instead of ninety-four plans.
