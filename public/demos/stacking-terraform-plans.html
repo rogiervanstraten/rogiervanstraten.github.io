@@ -558,7 +558,7 @@
         + `</div>`;
     }).join("");
 
-    function select(key) {
+    function select(key, scroll = true) {
       document.querySelectorAll(".resource").forEach((r) => {
         r.classList.toggle("selected", r.dataset.key === key);
       });
@@ -571,7 +571,7 @@
       const badge = document.getElementById("rh-badge");
       badge.textContent = `${g.plans}/${TOTAL} plans`;
       badge.classList.toggle("warn", warn);
-      document.getElementById("grp-" + key).scrollIntoView({ behavior: "smooth", block: "start" });
+      if (scroll) document.getElementById("grp-" + key).scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     sidebar.querySelectorAll(".resource").forEach((r) => {
@@ -584,8 +584,7 @@
       if (e.key === "ArrowUp") { idx = Math.max(0, idx - 1); select(groups[idx].key); e.preventDefault(); }
     });
 
-    select(groups[0].key);
-    document.getElementById("scroll").scrollTop = 0;
+    select(groups[0].key, false);
   </script>
 </body>
 
