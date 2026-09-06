@@ -35,8 +35,16 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
         posts.map((post) => (
           <li>
             <a href={`/blog/${post.id}/`} class="group flex items-baseline justify-between gap-4">
-              <span class="text-neutral-900 underline decoration-neutral-300 underline-offset-4 group-hover:decoration-neutral-900 dark:text-neutral-100 dark:decoration-neutral-700 dark:group-hover:decoration-neutral-100">
-                {post.data.title}
+              <span class="flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100">
+                <span class="underline decoration-neutral-300 underline-offset-4 group-hover:decoration-neutral-900 dark:decoration-neutral-700 dark:group-hover:decoration-neutral-100">
+                  {post.data.title}
+                </span>
+                {post.data.tags?.includes('github-actions') && (
+                  <span class="inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-mono text-[10px] font-medium leading-none text-yellow-500 ring-1 ring-yellow-400/60 dark:text-yellow-400 dark:ring-yellow-400/50">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                    GHA
+                  </span>
+                )}
               </span>
               <span class="shrink-0 font-mono text-xs text-neutral-400 dark:text-neutral-500">
                 {post.data.date.toISOString().slice(0, 10)}

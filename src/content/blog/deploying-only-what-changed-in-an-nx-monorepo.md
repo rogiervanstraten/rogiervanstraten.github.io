@@ -2,6 +2,7 @@
 title: Deploying only what changed in an NX monorepo
 description: A GitHub Action that uses the Deployments API as per-app deploy state, so nx affected diffs each app against its own last successful deploy.
 date: 2026-04-24
+tags: [github-actions]
 links:
   - href: https://github.com/rogiervanstraten/nx-resolve-affected
     title: nx-resolve-affected

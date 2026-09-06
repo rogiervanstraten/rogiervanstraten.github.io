@@ -2,6 +2,7 @@
 title: Finding affected Terraform projects in a monorepo
 description: A GitHub Action that walks module dependencies and changed files to tell CI which Terraform projects actually need to run.
 date: 2025-11-15
+tags: [github-actions]
 links:
   - href: https://github.com/rogiervanstraten/terraform-affected-projects
     title: terraform-affected-projects
